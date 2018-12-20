@@ -12,34 +12,20 @@ pre-made .png image.
 
 The goal is to make the heatmaps above look something like this:
 
-``` r
-# fs::dir_ls("image")
-knitr::include_graphics("image/SEG_n2083.png")
-```
-
 ![](image/SEG_n2083.png)<!-- -->
 
 What we ended up with was this:
-
-``` r
-# fs::dir_ls("image")
-knitr::include_graphics("image/2018-12-20-heat_map_1.0.png")
-```
 
 ![](image/2018-12-20-heat_map_1.0.png)<!-- -->
 
 Now we have a blank background image.
 
-``` r
-# fs::dir_ls("image")
-knitr::include_graphics("image/BackgroundComplete.png")
-```
-
 ![](image/BackgroundComplete.png)<!-- -->
 
-In order to do this, I need to load a few data sets from Github.
-
 ## Download and read in the data
+
+In order to create these graphs, I need to load a few data sets from
+Github.
 
 ``` r
 # 5 - HEAT MAP DATA INPUTS ============= ----
@@ -90,16 +76,16 @@ RiskPairData %>%
     ## # A tibble: 10 x 4
     ##      REF   BGM RiskFactor abs_risk
     ##    <dbl> <dbl>      <dbl>    <dbl>
-    ##  1   584   346     0.616    0.616 
-    ##  2   219   252    -0.321    0.321 
-    ##  3   348   557    -0.697    0.697 
-    ##  4   240   547    -1.33     1.33  
-    ##  5   479   264     0.786    0.786 
-    ##  6   172   205    -0.756    0.756 
-    ##  7    32    80    -1.87     1.87  
-    ##  8   450   205     0.977    0.977 
-    ##  9   448   197     1.16     1.16  
-    ## 10   540   483     0.0992   0.0992
+    ##  1   143   581     -2.41     2.41 
+    ##  2   547   498      0.102    0.102
+    ##  3   388   230      0.646    0.646
+    ##  4   473   388      0.338    0.338
+    ##  5   104   271     -2.01     2.01 
+    ##  6   474   480      0        0    
+    ##  7    48   373     -3.50     3.50 
+    ##  8   427   407      0        0    
+    ##  9   326    53      2.56     2.56 
+    ## 10    94   556     -2.89     2.89
 
 ## The `SampMeasData`.
 
@@ -201,7 +187,9 @@ RiskPairData %>%
 
 ![](seg-ggplot2_files/figure-gfm/RiskFactor-REF-BGM-1.png)<!-- -->
 
-Now we will plot the `abs_risk` as a function of `seg_val` values.
+This shows some sharp cut-offs for the `RiskFactor` at the levels above
+200 for `REF` and `BGM`, Now we will plot the `abs_risk` as a function
+of `seg_val` values.
 
 ``` r
 RiskPairData %>% 
@@ -215,15 +203,24 @@ RiskPairData %>%
 
 ![](seg-ggplot2_files/figure-gfm/abs_risk-REF-BGM-1.png)<!-- -->
 
+This shows the same relationship between the two measurements. There are
+long chunks of little variation in `abs_risk` for values of `REF` and
+`BGM`.
+
+## Plot the `REF` and `BGM`
+
+This explains why the plot below looks the way it does.
+
 ``` r
 RiskPairData %>% 
   ggplot2::ggplot(aes(x = REF, 
                       y = BGM,
-                      color = abs_risk)) + 
-  ggplot2::geom_point()
+                      color = abs_risk)) + ggplot2::geom_point()
 ```
 
 ![](seg-ggplot2_files/figure-gfm/risk-layer-no-base_layer-1.png)<!-- -->
+
+At around `400` for each measurement, the graph had sharp edges.
 
 This sets the `abs_risk` as the color gradient, vs. manually setting it
 with the `base_layer` below.
@@ -248,20 +245,19 @@ risk_layer
 
 Note the less than smooth transitions between the x and y coordinates.
 
-## The Gaussian smoothed image
+## The Gaussian smoothed image `BackgroundComplete.png`
 
 The goal is to get something more like this:
-
-``` r
-# fs::dir_ls("image")
-knitr::include_graphics(path = "image/BackgroundComplete.png")
-```
 
 ![](image/BackgroundComplete.png)<!-- -->
 
 But without these as a backdrop, the heatmap image is rendered with the
-following
-appearance.
+following appearance.
+
+### The `risk level` gradient
+
+This is for the gradient scale on the
+side.
 
 ``` r
 # 5.7 add fill gradient  ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
@@ -301,6 +297,11 @@ risk_level_color_gradient
 
 ![](seg-ggplot2_files/figure-gfm/risk_level_color_gradient-1.png)<!-- -->
 
+## The SEG grid without data
+
+These are the `REF` and `BGM` values without any sample data
+added.
+
 ``` r
 # 5.8 add color gradient  ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 # Add the new color scales to the scale_y_continuous()
@@ -338,6 +339,11 @@ heatmap_plot
 
 ![](seg-ggplot2_files/figure-gfm/build-heatmap_plot-1.png)<!-- -->
 
+## The heatmap with sample data
+
+Below are the sample blood glucose measurements in the
+plot.
+
 ``` r
 # 5.11 add SampMeasData to heatmap_plot ---- ---- ---- ---- ---- ---- ----
 # sample measure data import ---- 
@@ -359,15 +365,6 @@ heat_map_1.0
 
 ![](seg-ggplot2_files/figure-gfm/heat_map_1.0-1.png)<!-- -->
 
-## Convert Gaussian image to ggplot2 background
-
-This can be done in two ways. The first comes from the `magik`
-package.
-
-``` r
-library(magick)
-```
-
 ``` r
 # export heat_map_1.0 -----------------------------------------------------
 ggplot2::ggsave(filename = 
@@ -375,4 +372,12 @@ ggplot2::ggsave(filename =
                                base::noquote(lubridate::today()),
                                "-heat_map_1.0.png"), 
                 device = "png")
+```
+
+## Convert Gaussian image to ggplot2 background
+
+This can be done in two ways. The first comes from the `magik` package.
+
+``` r
+library(magick)
 ```
