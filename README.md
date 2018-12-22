@@ -2,48 +2,14 @@ SEG - ggplot2
 ================
 Martin Frigaard
 
-# Motivation
-
-This document creates the `ggplot2` heatmap in the [SEG
-application](https://www.diabetestechnology.org/seg/). In earlier
-versions of the application, the heatmap didn’t look quite like the DTS
-folks wanted, so I decided to write up how I changed the heatmap using a
-pre-made .png image.
-
-The goal is to make the heatmaps above look something like this:
-
-## The original (Excel) SEG image
-
-This image is from the Excel application.
-
-![](image/SEG_n2083.png)<!-- -->
-
-What we ended up with was this:
-
-## The `ggplot2` image
-
-When we re-create the graph using the risk pair data, we get this.
-
-![](image/2018-12-20-heat_map_1.0.png)<!-- -->
-
-Now we have a blank background image.
-
-## The Guassian smoothed image
-
-This is the image from Josh Senyak.
-
-![](image/BackgroundComplete.png)<!-- -->
-
------
-
-## Download and read in the data
+# Data inputs
 
 In order to create these graphs, I need to load a few data sets from
 Github.
 
 ``` r
-# 5 - HEAT MAP DATA INPUTS ============= ----
-# 5.0 upload AppRiskPairData.csv from github  ---- ---- ---- ----
+# HEAT MAP DATA INPUTS ============= ----
+# upload AppRiskPairData.csv from github  ---- ---- ---- ----
 github_root <- "https://raw.githubusercontent.com/"
 app_riskpair_repo <- "mjfrigaard/SEG_shiny/master/Data/AppRiskPairData.csv"
 # download to data repo
@@ -90,16 +56,16 @@ RiskPairData %>%
     ## # A tibble: 10 x 4
     ##      REF   BGM RiskFactor abs_risk
     ##    <dbl> <dbl>      <dbl>    <dbl>
-    ##  1   366    33     3.05     3.05  
-    ##  2   357   403    -0.346    0.346 
-    ##  3   585   456     0.102    0.102 
-    ##  4   233    21     2.79     2.79  
-    ##  5   590   313     0.618    0.618 
-    ##  6   316   102     1.65     1.65  
-    ##  7   153   467    -2.05     2.05  
-    ##  8   264   295    -0.0636   0.0636
-    ##  9   136   427    -2.48     2.48  
-    ## 10   361   154     1.29     1.29
+    ##  1    54    33      0.672    0.672
+    ##  2   194   100      1.22     1.22 
+    ##  3   518   319      0.611    0.611
+    ##  4   464   378      0.338    0.338
+    ##  5   407   152      1.52     1.52 
+    ##  6   184   210     -0.295    0.295
+    ##  7   292   250      0.204    0.204
+    ##  8     2   263     -3.45     3.45 
+    ##  9   407   167      1.46     1.46 
+    ## 10   597     8      3.30     3.30
 
 ## The `SampMeasData`
 
@@ -115,10 +81,92 @@ SampMeasData %>% dplyr::glimpse(78)
     ## $ BGM <dbl> 121, 212, 161, 191, 189, 293, 130, 147, 83, 132, 146, 249, 11...
     ## $ REF <dbl> 127, 223, 166, 205, 210, 296, 142, 148, 81, 131, 155, 254, 12...
 
+# Motivation
+
+This document creates the `ggplot2` heatmap in the [SEG
+application](https://www.diabetestechnology.org/seg/). In earlier
+versions of the application, the heatmap background wasn’t smoothed like
+the Excel application, so I decided to write up how I changed the graph
+using a pre-made .png image.
+
+## The original (Excel) SEG image
+
+This image is from the Excel application.
+
+![](image/SEG_n2083.png)<!-- -->
+
+What we ended up with was this:
+
+## The `ggplot2` image
+
+When we re-create the graph using the risk pair data, we get this.
+
+![](image/2018-12-20-heat_map_1.0.png)<!-- -->
+
+This is because of the relationship between `RiskFactor`, `BGM` and
+`REF` values.
+
+## `RiskFactor` vs. `BGM`/`REF`
+
+If we look at `RiskFactor` as a function of `seg_val`, we see the
+following.
+
+``` r
+RiskPairData %>% 
+  tidyr::gather(key = "seg_key", 
+                value = "seg_val", 
+                c(REF, BGM)) %>% 
+  ggplot(aes(x = seg_val, y = RiskFactor, group = seg_key)) + 
+    geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
+```
+
+![](seg-ggplot2_files/figure-gfm/RiskFactor-REF-BGM-1.png)<!-- -->
+
+The values of `RiskFactor` do not change much for the `BGM` and `REF`
+values of 400-450, 450-500, and 500-600.
+
+## Plot `abs_risk` VS `REF`/`BGM`
+
+``` r
+RiskPairData %>% 
+  tidyr::gather(key = "seg_key", 
+                value = "seg_val", 
+                c(REF, BGM)) %>% 
+  ggplot(aes(x = seg_val, y = abs_risk, group = seg_key)) + 
+    geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
+```
+
+![](seg-ggplot2_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
+The same lines are seen when the absolute value of `RiskFactor` is
+plotted against the `BGM` and `REF` values.
+
+This explains why the plot below looks the way it does. The sharp lines
+are a result of the minimal change in `RiskFactor` (or `abs_risk`) for
+BGM and REF values of 400-450, and 500-600.
+
+``` r
+RiskPairData %>% 
+  ggplot2::ggplot(aes(x = REF, 
+                      y = BGM,
+                      color = abs_risk)) + 
+  ggplot2::geom_point()
+```
+
+![](seg-ggplot2_files/figure-gfm/risk-layer-no-base_layer-1.png)<!-- -->
+
+## The Guassian smoothed image
+
+This is the image from Josh Senyak.
+
+![](image/BackgroundComplete.png)<!-- -->
+
+## Define `mmlConvFactor`
+
 Define the `mmolConvFactor`.
 
 ``` r
-# 5.1 mmol conversion factor ---- ---- ---- ---- ---- ---- ----
+# mmol conversion factor ---- ---- ---- ---- ---- ---- ----
 mmolConvFactor <- 18.01806
 ```
 
@@ -128,11 +176,11 @@ Add the `rgb2hex` function and choose the red -\> green colors for
 scale.
 
 ``` r
-# 5.2 rgb2hex function ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+# rgb2hex function ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 # This is the RGB to Hex number function for R
 rgb2hex <- function(r, g, b) rgb(r, g, b, maxColorValue = 255)
 
-# 5.3 risk factor colors ---- ---- ---- ---- ---- ---- ---- ---- ----
+# risk factor colors ---- ---- ---- ---- ---- ---- ---- ---- ----
 # These are the values for the colors in the heatmap.
 abs_risk_0.0000_color <- rgb2hex(0, 165, 0)
 # abs_risk_0.0000_color
@@ -159,13 +207,13 @@ The base layer color gradient are built below. The base data frame only
 exists to give the x/y coordinates at this stage.
 
 ``` r
-# 5.4 create base_data data frame ---- ---- ---- ---- ---- ---- ---- 
+# create base_data data frame ---- ---- ---- ---- ---- ---- ---- 
 base_data <- data.frame(
   x_coordinate = 0,
   y_coordinate = 0,
   color_gradient = c(0:4)
 )
-# 5.5 base layer ---- ---- ---- ---- ---- ---- ---- ----
+# base layer ---- ---- ---- ---- ---- ---- ---- ----
 base_layer <- ggplot() +
   geom_point(
     data = base_data, # defines data frame
@@ -180,77 +228,16 @@ base_layer
 
 ![](seg-ggplot2_files/figure-gfm/base_data-create-1.png)<!-- -->
 
-This is simple plot for just the color gradient
+This is simple plot is only the color gradient, so no data are added to
+the graph.
 
-## Add the risk layer
-
-The next level is where we add the risk layer with the `RiskPairData`.
-But first we will take a look at the relationship between `RiskFactor`
-and `REF`/`BGM` before we add them as a base layer in the plot.
-
-### RiskFactor vs. BGM/REF
-
-If we look at `RiskFactor` as a function of `seg_val`, we see the
-following.
-
-``` r
-RiskPairData %>% 
-  tidyr::gather(key = "seg_key", 
-                value = "seg_val", 
-                c(REF, BGM)) %>% 
-  ggplot(aes(x = seg_val, y = RiskFactor, group = seg_key)) + 
-    geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
-```
-
-![](seg-ggplot2_files/figure-gfm/RiskFactor-REF-BGM-1.png)<!-- -->
-
-This shows some sharp cut-offs for the `RiskFactor` at the levels above
-200 for `REF` and `BGM`, Now we will plot the `abs_risk` as a function
-of `seg_val` values.
-
-### The absolute value of RiskFactor vs. BGM/REF
-
-When we plot the absolute value of the risk factor, we see the
-following.
-
-``` r
-RiskPairData %>% 
-  tidyr::gather(key = "seg_key", 
-                value = "seg_val", 
-                c(REF, BGM)) %>% 
-  ggplot2::ggplot(aes(x = seg_val, y = abs_risk, group = seg_key)) + 
-    ggplot2::geom_point(aes(color = seg_key), 
-                        alpha = 1/8, size = 0.5)
-```
-
-![](seg-ggplot2_files/figure-gfm/abs_risk-REF-BGM-1.png)<!-- -->
-
-This shows the same relationship between the two measurements. There are
-long chunks of little variation in `abs_risk` for values of `REF` and
-`BGM`.
-
-## Plot the `REF` and `BGM`
-
-This explains why the plot below looks the way it does. The sharp lines
-are a result of the minimal change in `RiskFactor` (or `abs_risk`) for
-BGM and REF values of 400-450, and 500-600.
-
-``` r
-RiskPairData %>% 
-  ggplot2::ggplot(aes(x = REF, 
-                      y = BGM,
-                      color = abs_risk)) + ggplot2::geom_point()
-```
-
-![](seg-ggplot2_files/figure-gfm/risk-layer-no-base_layer-1.png)<!-- -->
-
-At around `400` for each measurement, the graph had sharp edges.
+## Adding the risk layer
 
 This sets the `abs_risk` as the color gradient, vs. manually setting it
 with the `base_layer` below.
 
 ``` r
-# 5.6 risk pair data layer  ---- ---- ---- ---- ---- ---- ---- ----
+# risk pair data layer  ---- ---- ---- ---- ---- ---- ---- ----
 # RiskPairData %>% glimpse(78)
 risk_layer <- base_layer +
   geom_point(
@@ -269,21 +256,12 @@ risk_layer
 
 Note the less than smooth transitions between the x and y coordinates.
 
-## The Gaussian smoothed image `BackgroundComplete.png`
-
-The goal is to get something more like this:
-
-![](image/BackgroundComplete.png)<!-- -->
-
-But without these as a backdrop, the heatmap image is rendered with the
-following appearance.
-
 ### The `risk level` gradient
 
 This is for the gradient scale on the side.
 
 ``` r
-# 5.7 add fill gradient  ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+# add fill gradient  ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 risk_level_color_gradient <- risk_layer +
   ggplot2::scale_fill_gradientn( # scale_*_gradientn creats a n-color gradient
     values = scales::rescale(c(
@@ -325,7 +303,7 @@ risk_level_color_gradient
 These are the `REF` and `BGM` values without any sample data added.
 
 ``` r
-# 5.8 add color gradient  ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+# add color gradient  ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 # Add the new color scales to the scale_y_continuous()
 heatmap_plot <- risk_level_color_gradient +
   ggplot2::scale_color_gradientn(
@@ -361,12 +339,12 @@ heatmap_plot
 
 ![](seg-ggplot2_files/figure-gfm/build-heatmap_plot-1.png)<!-- -->
 
-## The heatmap with sample data
+## Add sample data to heatmap
 
 Below are the sample blood glucose measurements in the plot.
 
 ``` r
-# 5.11 add SampMeasData to heatmap_plot ---- ---- ---- ---- ---- ---- 
+# add SampMeasData to heatmap_plot ---- ---- ---- ---- ---- ---- 
 # sample measure data import ---- 
 # Add the data to heatmap_plot
 heat_map_1.0 <- heatmap_plot +
@@ -391,8 +369,7 @@ heat_map_1.0
 ggplot2::ggsave(filename = 
                   base::paste0("Image/", 
                                base::noquote(lubridate::today()),
-                               "-heat_map_1.0.png"), 
-                device = "png")
+                               "-heat_map_1.0.png"), device = "png")
 ```
 
 # Use Gaussian image with `ggplot2` background
@@ -513,3 +490,5 @@ heat_map_2.0
 ```
 
 ![](seg-ggplot2_files/figure-gfm/heat_map_2.0-1.png)<!-- -->
+
+Now I just need to add this to the applcation.
