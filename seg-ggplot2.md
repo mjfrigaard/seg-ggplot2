@@ -1,33 +1,13 @@
----
-title: "SEG - ggplot2"
-author: "Martin Frigaard"
-output: github_document
----
+SEG - ggplot2
+================
+Martin Frigaard
 
-```{r setup, include=FALSE}
-library(tidyverse)
-library(magrittr)
-require(skimr)
-require(janitor)
-library(heatmap3)
-library(shiny)
-library(rsconnect)
-library(data.table)
-library(gplots)
-library(heatmaply)
-library(tools)
-knitr::opts_chunk$set(echo = TRUE,
-                      tidy = FALSE,
-                      size = "small",
-                      warning = FALSE,
-                      message = FALSE)
-```
+## The Data inputs
 
-## The Data inputs 
+In order to create the SEG graphs, I need to load a few data inputs from
+Github.
 
-In order to create the SEG graphs, I need to load a few data inputs from Github.
-
-```{r data-inputs}
+``` r
 # HEAT MAP DATA INPUTS ============= ----
 # download AppRiskPairData.csv from github  ---- ---- ---- ----
 github_root <- "https://raw.githubusercontent.com/mjfrigaard/seg-shiny-data/master/"
@@ -88,43 +68,76 @@ base_data <- data.frame(
 
 ## The `RiskPairData`
 
-This data has columns and risk pairs for both `REF` and `BGM`, and the `RiskFactor` variable for each pair of `REF` and `BGM` data. Below you can see a sample of the `REF`, `BGM`, `RiskFactor`, and `abs_risk` variables.
+This data has columns and risk pairs for both `REF` and `BGM`, and the
+`RiskFactor` variable for each pair of `REF` and `BGM` data. Below you
+can see a sample of the `REF`, `BGM`, `RiskFactor`, and `abs_risk`
+variables.
 
-```{r sample-ref-bgm-riskfactor}
+``` r
 RiskPairData %>% 
   dplyr::sample_n(size = 10) %>% 
   dplyr::select(REF, BGM, RiskFactor, abs_risk)
 ```
 
+    ## # A tibble: 10 x 4
+    ##      REF   BGM RiskFactor abs_risk
+    ##    <dbl> <dbl>      <dbl>    <dbl>
+    ##  1   479   418     0.0534   0.0534
+    ##  2    15    54    -0.901    0.901 
+    ##  3   116   215    -1.64     1.64  
+    ##  4   272   326    -0.303    0.303 
+    ##  5   496   359     0.366    0.366 
+    ##  6   320   309     0        0     
+    ##  7   572    70     2.68     2.68  
+    ##  8   540   121     1.98     1.98  
+    ##  9   130   384    -2.29     2.29  
+    ## 10   501   506     0        0
 
 ## The `SampMeasData`
 
-This data set mimics a blood glucose monitor, with only `BGM` and `REF` values. 
+This data set mimics a blood glucose monitor, with only `BGM` and `REF`
+values.
 
-```{r SampMeasData}
+``` r
 SampMeasData %>% 
   dplyr::sample_n(size = 10) %>% 
   dplyr::select(REF, BGM)
 ```
 
+    ## # A tibble: 10 x 2
+    ##      REF   BGM
+    ##    <dbl> <dbl>
+    ##  1   257   254
+    ##  2   111   194
+    ##  3   115   121
+    ##  4   130   128
+    ##  5   155   155
+    ##  6   118   129
+    ##  7    96   102
+    ##  8   100    98
+    ##  9   206   212
+    ## 10   177   183
+
 # Motivation
 
-This document creates the `ggplot2` heatmap in the [SEG application](https://www.diabetestechnology.org/seg/). In earlier versions of the application, the heatmap background wasn't smoothed like the Excel application, so I decided to write up how I changed the graph using a pre-made .png image. 
+This document creates the `ggplot2` heatmap in the [SEG
+application](https://www.diabetestechnology.org/seg/). In earlier
+versions of the application, the heatmap background wasn’t smoothed like
+the Excel application, so I decided to write up how I changed the graph
+using a pre-made .png image.
 
 ## The original (Excel) SEG image
 
-This image is from the Excel application. 
+This image is from the Excel
+application.
 
-```{r SEG_n2083.png, out.width="5in", out.height="3in", echo=FALSE}
-# fs::dir_ls("image")
-knitr::include_graphics(paste0(github_root, "Image/SEG_n2083.png?raw=true"))
-```
+<img src="https://raw.githubusercontent.com/mjfrigaard/seg-shiny-data/master/Image/SEG_n2083.png?raw=true" width="5in" height="3in" />
 
-## The current ggplot2 image 
+## The current ggplot2 image
 
-The steps/code to create the current `ggplot2` image is below. 
+The steps/code to create the current `ggplot2` image is below.
 
-```{r heatmap-version-1}
+``` r
 # 1 - base layer ---- ---- ---- ---- ---- ---- ---- ----
 base_layer <- ggplot() +
   geom_point(
@@ -212,14 +225,18 @@ heatmap_plot <- risk_level_color_gradient +
 heatmap_plot
 ```
 
+![](seg-ggplot2_files/figure-gfm/heatmap-version-1-1.png)<!-- -->
 
-When we re-create the graph using the risk pair data, we get see sharp edges for values over 400 mg/dL and ~ 22 mmol/L. This is because of the relationships between the `RiskFactor` and `BGM` / `REF` values. 
+When we re-create the graph using the risk pair data, we get see sharp
+edges for values over 400 mg/dL and \~ 22 mmol/L. This is because of the
+relationships between the `RiskFactor` and `BGM` / `REF` values.
 
-## `RiskFactor` vs. `BGM`/`REF`
+## `RiskFactor` vs. `BGM`/`REF`
 
-If we look at `RiskFactor` as a function of `seg_val`, we see the following.
+If we look at `RiskFactor` as a function of `seg_val`, we see the
+following.
 
-```{r RiskFactor-REF-BGM}
+``` r
 RiskPairData %>% 
   tidyr::gather(key = "seg_key", 
                 value = "seg_val", 
@@ -228,13 +245,17 @@ RiskPairData %>%
     geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
 ```
 
-The values of `RiskFactor` do not change much for the `BGM` and `REF` values of 400-450, 450-500, and 500-600. 
+![](seg-ggplot2_files/figure-gfm/RiskFactor-REF-BGM-1.png)<!-- -->
+
+The values of `RiskFactor` do not change much for the `BGM` and `REF`
+values of 400-450, 450-500, and 500-600.
 
 ## Plot `abs_risk` VS `REF`/`BGM`
 
-If we plot the absolute value of the `RiskFactor`, we see the same shape to the points. 
+If we plot the absolute value of the `RiskFactor`, we see the same shape
+to the points.
 
-```{r RiskFactor-REF-BGM-2}
+``` r
 RiskPairData %>% 
   tidyr::gather(key = "seg_key", 
                 value = "seg_val", 
@@ -243,24 +264,30 @@ RiskPairData %>%
     geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
 ```
 
-The same lines are seen when the absolute value of `RiskFactor` is plotted against the `BGM` and `REF` values. This explains why the plot below looks the way it does. The sharp lines are a result of the minimal change in `RiskFactor` (or `abs_risk`) for `BGM` and `REF` values of 400-450, and 500-600.
+![](seg-ggplot2_files/figure-gfm/RiskFactor-REF-BGM-2-1.png)<!-- -->
+
+The same lines are seen when the absolute value of `RiskFactor` is
+plotted against the `BGM` and `REF` values. This explains why the plot
+below looks the way it does. The sharp lines are a result of the minimal
+change in `RiskFactor` (or `abs_risk`) for `BGM` and `REF` values of
+400-450, and 500-600.
 
 ## The Guassian smoothed image
 
-This is the image from the excel file.
+This is the image from the excel
+file.
 
-```{r new-BackgroundComplete.png, out.width=5, out.height=5, echo=FALSE}
-# fs::dir_ls("image")
-knitr::include_graphics(paste0(github_root,"Image/seg600.png?raw=true"))
-```
+<img src="https://raw.githubusercontent.com/mjfrigaard/seg-shiny-data/master/Image/seg600.png?raw=true" width="5" height="5" />
 
-I can use this in the plot as a base image and layer the points from the sample data on top. 
+I can use this in the plot as a base image and layer the points from the
+sample data on top.
 
-## Upload the Gaussian image 
+## Upload the Gaussian image
 
-Load the image into RStudio and assign it to an object with `png::readPNG()`.
+Load the image into RStudio and assign it to an object with
+`png::readPNG()`.
 
-```{r BackgroundSmooth}
+``` r
 library(jpeg)
 library(png)
 # 1) read in as png
@@ -270,9 +297,10 @@ BackgroundSmooth <- png::readPNG("image/seg600.png")
 
 ## Layer 1 (axes and color gradient)
 
-This is the new plot without any data added to the image. All I do here is create the x and y axes and set a four-point color gradient.
+This is the new plot without any data added to the image. All I do here
+is create the x and y axes and set a four-point color gradient.
 
-```{r gaussian-plot}
+``` r
 base_layer <- base_data %>% 
   ggplot(aes(
       x = x_coordinate,
@@ -300,11 +328,14 @@ scales_layer <- base_layer +
 scales_layer
 ```
 
+![](seg-ggplot2_files/figure-gfm/gaussian-plot-1.png)<!-- -->
+
 ## Layer 2 (Gaussian image)
 
-This is the Gaussian image layer. Now that I have the axes set, I can set the `xmin`, `xmax`, `ymin`, and `ymax` values in my plot. 
+This is the Gaussian image layer. Now that I have the axes set, I can
+set the `xmin`, `xmax`, `ymin`, and `ymax` values in my plot.
 
-```{r gaussian_layer}
+``` r
 gaussian_layer <- scales_layer +
   ggplot2::annotation_custom(
     grid::rasterGrob(image = BackgroundSmooth, 
@@ -317,11 +348,14 @@ gaussian_layer <- scales_layer +
 gaussian_layer
 ```
 
+![](seg-ggplot2_files/figure-gfm/gaussian_layer-1.png)<!-- -->
+
 ## Layer 3 (color gradient)
 
-In this layer I add the color gradient scaling and coloring, and also the cutom labels for each level. 
+In this layer I add the color gradient scaling and coloring, and also
+the cutom labels for each level.
 
-```{r gaussian_gradient_layer}
+``` r
 gaussian_gradient_layer <- gaussian_layer + 
     ggplot2::scale_fill_gradientn( # scale_*_gradientn creats a n-color gradient
     values = scales::rescale(c(
@@ -355,11 +389,13 @@ gaussian_gradient_layer <- gaussian_layer +
 gaussian_gradient_layer
 ```
 
+![](seg-ggplot2_files/figure-gfm/gaussian_gradient_layer-1.png)<!-- -->
+
 ## Layer 4 (sample data)
 
-In the final layer, I add the sample data to the plot. 
+In the final layer, I add the sample data to the plot.
 
-```{r heatmap_plot}
+``` r
 heatmap_plot <- gaussian_gradient_layer +
   geom_point(
     data = SampMeasData, # introduce sample data frame
@@ -375,5 +411,7 @@ heatmap_plot <- gaussian_gradient_layer +
   )
 heatmap_plot
 ```
+
+![](seg-ggplot2_files/figure-gfm/heatmap_plot-1.png)<!-- -->
 
 Now I just need to add this to the applcation.
