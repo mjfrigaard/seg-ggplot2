@@ -23,6 +23,22 @@ knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE)
 ```
 
+## The packages
+
+These are the packages you'll need to reproduce this page:
+
+```{r packages, eval=FALSE}
+library(tidyverse)
+library(magrittr)
+library(shiny)
+library(rsconnect)
+library(gplots)
+library(tools)
+library(jpeg)
+library(png)
+```
+
+
 ## The Data inputs 
 
 In order to create the SEG graphs, I need to load a few data inputs from Github.
@@ -115,7 +131,7 @@ This document creates the `ggplot2` heatmap in the [SEG application](https://www
 
 This image is from the Excel application. 
 
-```{r SEG_n2083.png, out.width="5in", out.height="3in", echo=FALSE}
+```{r SEG_n2083, echo=FALSE}
 # fs::dir_ls("image")
 knitr::include_graphics(paste0(github_root, "Image/SEG_n2083.png?raw=true"))
 ```
@@ -249,9 +265,13 @@ The same lines are seen when the absolute value of `RiskFactor` is plotted again
 
 This is the image from the excel file.
 
-```{r new-BackgroundComplete.png, out.width=5, out.height=5, echo=FALSE}
-# fs::dir_ls("image")
-knitr::include_graphics(paste0(github_root,"Image/seg600.png?raw=true"))
+```{r download-seg600-file, echo=TRUE, results='hide'}
+download.file(url = paste0(github_root,"Image/seg600.png?raw=true"), 
+              destfile = "image/seg600.png")
+```
+
+```{r new-BackgroundComplete, echo=FALSE}
+knitr::include_graphics("image/seg600.png")
 ```
 
 I can use this in the plot as a base image and layer the points from the sample data on top. 
@@ -261,10 +281,7 @@ I can use this in the plot as a base image and layer the points from the sample 
 Load the image into RStudio and assign it to an object with `png::readPNG()`.
 
 ```{r BackgroundSmooth}
-library(jpeg)
-library(png)
-# 1) read in as png
-download.file(url = paste0(github_root,"Image/seg600.png?raw=true"), destfile = "image/seg600.png")
+# read in as png
 BackgroundSmooth <- png::readPNG("image/seg600.png")
 ```
 

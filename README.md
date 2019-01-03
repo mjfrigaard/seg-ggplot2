@@ -2,6 +2,21 @@ SEG - ggplot2
 ================
 Martin Frigaard
 
+## The packages
+
+These are the packages you’ll need to reproduce this page:
+
+``` r
+library(tidyverse)
+library(magrittr)
+library(shiny)
+library(rsconnect)
+library(gplots)
+library(tools)
+library(jpeg)
+library(png)
+```
+
 ## The Data inputs
 
 In order to create the SEG graphs, I need to load a few data inputs from
@@ -82,16 +97,16 @@ RiskPairData %>%
     ## # A tibble: 10 x 4
     ##      REF   BGM RiskFactor abs_risk
     ##    <dbl> <dbl>      <dbl>    <dbl>
-    ##  1   479   418     0.0534   0.0534
-    ##  2    15    54    -0.901    0.901 
-    ##  3   116   215    -1.64     1.64  
-    ##  4   272   326    -0.303    0.303 
-    ##  5   496   359     0.366    0.366 
-    ##  6   320   309     0        0     
-    ##  7   572    70     2.68     2.68  
-    ##  8   540   121     1.98     1.98  
-    ##  9   130   384    -2.29     2.29  
-    ## 10   501   506     0        0
+    ##  1   185   176      0.399    0.399
+    ##  2   277   233      0.232    0.232
+    ##  3   573   125      1.98     1.98 
+    ##  4    23   332     -3.55     3.55 
+    ##  5   491   204      1.02     1.02 
+    ##  6   358   578     -0.517    0.517
+    ##  7   135   566     -2.62     2.62 
+    ##  8   265   476     -0.934    0.934
+    ##  9   115   353     -2.38     2.38 
+    ## 10   251   509     -1.05     1.05
 
 ## The `SampMeasData`
 
@@ -107,16 +122,16 @@ SampMeasData %>%
     ## # A tibble: 10 x 2
     ##      REF   BGM
     ##    <dbl> <dbl>
-    ##  1   257   254
-    ##  2   111   194
-    ##  3   115   121
-    ##  4   130   128
-    ##  5   155   155
-    ##  6   118   129
-    ##  7    96   102
-    ##  8   100    98
-    ##  9   206   212
-    ## 10   177   183
+    ##  1   212   220
+    ##  2    53    55
+    ##  3   117   110
+    ##  4   113   103
+    ##  5   185   181
+    ##  6   232   201
+    ##  7   130   125
+    ##  8   111    96
+    ##  9   106   106
+    ## 10   125   124
 
 # Motivation
 
@@ -131,7 +146,7 @@ using a pre-made .png image.
 This image is from the Excel
 application.
 
-<img src="https://raw.githubusercontent.com/mjfrigaard/seg-shiny-data/master/Image/SEG_n2083.png?raw=true" width="5in" height="3in" />
+![](https://raw.githubusercontent.com/mjfrigaard/seg-shiny-data/master/Image/SEG_n2083.png?raw=true)<!-- -->
 
 ## The current ggplot2 image
 
@@ -274,10 +289,14 @@ change in `RiskFactor` (or `abs_risk`) for `BGM` and `REF` values of
 
 ## The Guassian smoothed image
 
-This is the image from the excel
-file.
+This is the image from the excel file.
 
-<img src="https://raw.githubusercontent.com/mjfrigaard/seg-shiny-data/master/Image/seg600.png?raw=true" width="5" height="5" />
+``` r
+download.file(url = paste0(github_root,"Image/seg600.png?raw=true"), 
+              destfile = "image/seg600.png")
+```
+
+![](image/seg600.png)<!-- -->
 
 I can use this in the plot as a base image and layer the points from the
 sample data on top.
@@ -288,10 +307,7 @@ Load the image into RStudio and assign it to an object with
 `png::readPNG()`.
 
 ``` r
-library(jpeg)
-library(png)
-# 1) read in as png
-download.file(url = paste0(github_root,"Image/seg600.png?raw=true"), destfile = "image/seg600.png")
+# read in as png
 BackgroundSmooth <- png::readPNG("image/seg600.png")
 ```
 
