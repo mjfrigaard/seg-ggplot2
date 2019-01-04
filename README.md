@@ -2,6 +2,32 @@ SEG - ggplot2
 ================
 Martin Frigaard
 
+# Background
+
+This document outlines a graph I built for a [Shiny
+application](https://n3wsandnumb3rs.shinyapps.io/seg-shiny-v-1-3-1/).
+
+The application takes a single .csv file with two columns containing
+blood glucose monitor measurements. The application assigns a risk
+factor value and plots the values to visually display the level of
+clinical risk in potentially inaccurate blood glucose monitors. This
+graph is referred to as the Surveillance Error Grid (SEG).
+
+In the first versions of the application, the SEG graph didn’t look very
+clean because of the values used to create the underlying plot. Below I
+describe the steps I took to figure out what was going on and how I
+fixed it.
+
+**TOPICS COVERED:**
+
+  - `ggplot2` for graphing
+
+  - `png` for importing images
+
+  - `grid::rasterGrob()` for creating a background in a `ggplot2` graph
+
+  - lots of `dplyr` and `tidyr` for wrangling
+
 ## The packages
 
 These are the packages you’ll need to reproduce this page:
@@ -97,16 +123,16 @@ RiskPairData %>%
     ## # A tibble: 10 x 4
     ##      REF   BGM RiskFactor abs_risk
     ##    <dbl> <dbl>      <dbl>    <dbl>
-    ##  1   185   176      0.399    0.399
-    ##  2   277   233      0.232    0.232
-    ##  3   573   125      1.98     1.98 
-    ##  4    23   332     -3.55     3.55 
-    ##  5   491   204      1.02     1.02 
-    ##  6   358   578     -0.517    0.517
-    ##  7   135   566     -2.62     2.62 
-    ##  8   265   476     -0.934    0.934
-    ##  9   115   353     -2.38     2.38 
-    ## 10   251   509     -1.05     1.05
+    ##  1   572    72     2.51     2.51  
+    ##  2   389   121     1.67     1.67  
+    ##  3   241   412    -1.14     1.14  
+    ##  4   312   154     1.16     1.16  
+    ##  5   455   132     1.88     1.88  
+    ##  6   363   186     0.878    0.878 
+    ##  7   152   500    -2.06     2.06  
+    ##  8   388   420    -0.316    0.316 
+    ##  9   495   412     0.0534   0.0534
+    ## 10    78   373    -2.89     2.89
 
 ## The `SampMeasData`
 
@@ -122,16 +148,16 @@ SampMeasData %>%
     ## # A tibble: 10 x 2
     ##      REF   BGM
     ##    <dbl> <dbl>
-    ##  1   212   220
-    ##  2    53    55
-    ##  3   117   110
-    ##  4   113   103
-    ##  5   185   181
-    ##  6   232   201
-    ##  7   130   125
-    ##  8   111    96
-    ##  9   106   106
-    ## 10   125   124
+    ##  1   204   196
+    ##  2   232   211
+    ##  3    98   111
+    ##  4   212   218
+    ##  5   190   175
+    ##  6   170   168
+    ##  7   115   109
+    ##  8    97    93
+    ##  9   162   169
+    ## 10   361   309
 
 # Motivation
 

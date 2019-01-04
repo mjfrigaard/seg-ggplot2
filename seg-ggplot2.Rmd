@@ -23,6 +23,24 @@ knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE)
 ```
 
+# Background
+
+This document outlines a graph I built for a [Shiny application](https://n3wsandnumb3rs.shinyapps.io/seg-shiny-v-1-3-1/).
+
+The application takes a single .csv file with two columns containing blood glucose monitor measurements. The application assigns a risk factor value and plots the values to visually display the level of clinical risk in potentially inaccurate blood glucose monitors. This graph is referred to as the Surveillance Error Grid (SEG).
+
+In the first versions of the application, the SEG graph didn't look very clean because of the values used to create the underlying plot. Below I describe the steps I took to figure out what was going on and how I fixed it. 
+
+**TOPICS COVERED:**
+
+- `ggplot2` for graphing
+
+- `png` for importing images 
+
+- `grid::rasterGrob()` for creating a background in a `ggplot2` graph
+
+- lots of `dplyr` and `tidyr` for wrangling
+
 ## The packages
 
 These are the packages you'll need to reproduce this page:
