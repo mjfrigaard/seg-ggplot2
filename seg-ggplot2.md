@@ -1,58 +1,39 @@
----
-title: "SEG - ggplot2"
-author: "Martin Frigaard"
-output: github_document
----
-
-```{r setup, include=FALSE}
-library(tidyverse)
-library(magrittr)
-require(skimr)
-require(janitor)
-library(heatmap3)
-library(shiny)
-library(rsconnect)
-library(data.table)
-library(gplots)
-library(heatmaply)
-library(tools)
-# images
-if (!file.exists("images/")) {
-    dir.create("images/")
-}
-# data
-if (!file.exists("data/")) {
-    dir.create("data/")
-}
-knitr::opts_chunk$set(echo = TRUE,
-                      tidy = FALSE,
-                      size = "small",
-                      fig.path = "images")
-```
+SEG - ggplot2
+================
+Martin Frigaard
 
 # Background
 
-This document outlines a graph I built for a [Shiny application](https://n3wsandnumb3rs.shinyapps.io/seg-shiny-v-1-3-1/).
+This document outlines a graph I built for a [Shiny
+application](https://n3wsandnumb3rs.shinyapps.io/seg-shiny-v-1-3-1/).
 
-The interface accepts a single .csv file with two columns containing blood glucose monitor measurements. These data get assigned a risk factor value, and the Shiny app plots the values to visually display the level of clinical risk in potentially inaccurate blood glucose monitors. This graph is referred to as the Surveillance Error Grid (SEG). The app also creates summary tables and a modified Bland-Altman plot. 
+The interface accepts a single .csv file with two columns containing
+blood glucose monitor measurements. These data get assigned a risk
+factor value, and the Shiny app plots the values to visually display the
+level of clinical risk in potentially inaccurate blood glucose monitors.
+This graph is referred to as the Surveillance Error Grid (SEG). The app
+also creates summary tables and a modified Bland-Altman plot.
 
-In the first versions of the application, the SEG graph didn't look very clean because of the reference values used to create the underlying plot. Below I describe the steps I took to figure out what was going on, and the packages/methods I used to fix it. 
+In the first versions of the application, the SEG graph didn’t look very
+clean because of the reference values used to create the underlying
+plot. Below I describe the steps I took to figure out what was going on,
+and the packages/methods I used to fix it.
 
 **TOPICS COVERED:**
 
-- `ggplot2` for graphing
+  - `ggplot2` for graphing
 
-- `png` for importing images 
+  - `png` for importing images
 
-- `grid::rasterGrob()` for creating a background in a `ggplot2` graph
+  - `grid::rasterGrob()` for creating a background in a `ggplot2` graph
 
-- lots of `dplyr` and `tidyr` for wrangling
+  - lots of `dplyr` and `tidyr` for wrangling
 
 ## The packages
 
-These are the packages you'll need to reproduce this page:
+These are the packages you’ll need to reproduce this page:
 
-```{r packages, eval=FALSE}
+``` r
 library(tidyverse)
 library(magrittr)
 library(shiny)
@@ -63,16 +44,20 @@ library(jpeg)
 library(png)
 ```
 
+## The Data inputs
 
-## The Data inputs 
+In order to create the SEG graphs and tables, I need to load a few data
+inputs from Github. The code chunk below loads:
 
-In order to create the SEG graphs and tables, I need to load a few data inputs from Github. The code chunk below loads: 
+1.  `RiskPairData` -\> this assign a risk factor value to each BGM
+    measurement
+2.  `SampMeasData` -\> this is a small sample measurement dataset
+3.  `VanBltComp` -\> this is a dataset from Vanderbilt used to create
+    some of the initial calculations
 
-1. `RiskPairData` -> this assign a risk factor value to each BGM measurement
-2. `SampMeasData` -> this is a small sample measurement dataset 
-3. `VanBltComp` -> this is a dataset from Vanderbilt used to create some of the initial calculations
+<!-- end list -->
 
-```{r data-inputs}
+``` r
 # HEAT MAP DATA INPUTS ============= ----
 # download AppRiskPairData.csv from github  ---- ---- ---- ----
 github_root <- "https://raw.githubusercontent.com/mjfrigaard/seg-shiny-data/master/"
@@ -96,9 +81,38 @@ utils::download.file(url = paste0(github_root, vand_comp_data_rep),
 
 # Read in the RiskPairData & SampMeasData
 RiskPairData <- readr::read_csv(file = "data/Riskpairdata.csv")
-SampMeasData <- readr::read_csv(file = "data/Sampledata.csv")
-VanBltComp <- readr::read_csv(file = "data/VanderbiltComplete.csv")
+```
 
+    ## Parsed with column specification:
+    ## cols(
+    ##   RiskPairID = col_double(),
+    ##   REF = col_double(),
+    ##   BGM = col_double(),
+    ##   RiskFactor = col_double(),
+    ##   abs_risk = col_double()
+    ## )
+
+``` r
+SampMeasData <- readr::read_csv(file = "data/Sampledata.csv")
+```
+
+    ## Parsed with column specification:
+    ## cols(
+    ##   BGM = col_double(),
+    ##   REF = col_double()
+    ## )
+
+``` r
+VanBltComp <- readr::read_csv(file = "data/VanderbiltComplete.csv")
+```
+
+    ## Parsed with column specification:
+    ## cols(
+    ##   BGM = col_double(),
+    ##   REF = col_double()
+    ## )
+
+``` r
 #  mmol conversion factor ---- -----
 mmolConvFactor <- 18.01806
 #  rgb2hex function ---- -----
@@ -133,55 +147,102 @@ base_data <- data.frame(
 
 ## The `RiskPairData`
 
-This data has columns and risk pairs for both `REF` and `BGM`, and the `RiskFactor` variable for each pair of `REF` and `BGM` data. Below you can see a sample of the `REF`, `BGM`, `RiskFactor`, and `abs_risk` variables.
+This data has columns and risk pairs for both `REF` and `BGM`, and the
+`RiskFactor` variable for each pair of `REF` and `BGM` data. Below you
+can see a sample of the `REF`, `BGM`, `RiskFactor`, and `abs_risk`
+variables.
 
-```{r sample-ref-bgm-riskfactor}
+``` r
 RiskPairData %>% 
   dplyr::sample_n(size = 10) %>% 
   dplyr::select(REF, BGM, RiskFactor, abs_risk)
 ```
 
+    ## # A tibble: 10 x 4
+    ##      REF   BGM RiskFactor abs_risk
+    ##    <dbl> <dbl>      <dbl>    <dbl>
+    ##  1    25   565     -3.70     3.70 
+    ##  2   119    10      2.09     2.09 
+    ##  3   327   435     -0.534    0.534
+    ##  4   192   160      0.517    0.517
+    ##  5   350   109      1.65     1.65 
+    ##  6   290   472     -0.880    0.880
+    ##  7    71   469     -3.15     3.15 
+    ##  8   228   332     -0.646    0.646
+    ##  9    71   541     -3.22     3.22 
+    ## 10   212   111      1.26     1.26
 
 ## The `SampMeasData`
 
-This data set mimics a blood glucose monitor, with only `BGM` and `REF` values. 
+This data set mimics a blood glucose monitor, with only `BGM` and `REF`
+values.
 
-```{r SampMeasData}
+``` r
 SampMeasData %>% 
   dplyr::sample_n(size = 10) %>% 
   dplyr::select(REF, BGM)
 ```
 
+    ## # A tibble: 10 x 2
+    ##      REF   BGM
+    ##    <dbl> <dbl>
+    ##  1   172   190
+    ##  2   122   123
+    ##  3   136   141
+    ##  4   143   154
+    ##  5    66    69
+    ##  6   207   205
+    ##  7   206   221
+    ##  8   107   112
+    ##  9   161   155
+    ## 10   157   159
+
 ## The `VanBltComp`
 
-This larger data set contains blood glucose monitor measurements, with only `BGM` and `REF` values. 
+This larger data set contains blood glucose monitor measurements, with
+only `BGM` and `REF` values.
 
-```{r VanBltComp}
+``` r
 VanBltComp %>% 
   dplyr::sample_n(size = 10) %>% 
   dplyr::select(REF, BGM)
 ```
 
+    ## # A tibble: 10 x 2
+    ##      REF   BGM
+    ##    <dbl> <dbl>
+    ##  1   122   121
+    ##  2   194   187
+    ##  3   102    95
+    ##  4   147   156
+    ##  5   177   164
+    ##  6   228   221
+    ##  7   146   147
+    ##  8   220   228
+    ##  9   222   201
+    ## 10   195   191
+
 # Motivating problem/issue
 
-In earlier versions of the application, the heatmap background wasn't smoothed like the original Excel application. This file documents how I changed the SEG graph using a pre-made .png image. 
+In earlier versions of the application, the heatmap background wasn’t
+smoothed like the original Excel application. This file documents how I
+changed the SEG graph using a pre-made .png image.
 
 ## The original (Excel) SEG image
 
-This image is from the Excel application. 
+This image is from the Excel
+application.
 
-```{r SEG_n2083, echo=FALSE}
-# fs::dir_ls("image")
-knitr::include_graphics(paste0(github_root, "Image/SEG_n2083.png?raw=true"))
-```
+![](https://raw.githubusercontent.com/mjfrigaard/seg-shiny-data/master/Image/SEG_n2083.png?raw=true)<!-- -->
 
-The points are plotted against a Gaussian smoothed background image. 
+The points are plotted against a Gaussian smoothed background image.
 
-## The current ggplot2 image 
+## The current ggplot2 image
 
-The steps/code to create the current `ggplot2` image are below (this code will take a bit to run). 
+The steps/code to create the current `ggplot2` image are below (this
+code will take a bit to run).
 
-```{r heatmap-version-1}
+``` r
 # 1 - base layer ---- ---- ---- ---- ---- ---- ---- ----
 base_layer <- ggplot() +
   geom_point(
@@ -269,14 +330,19 @@ heatmap_plot <- risk_level_color_gradient +
 heatmap_plot
 ```
 
+![](imagesheatmap-version-1-1.png)<!-- -->
 
-When we re-create the graph using the risk pair data, we get see sharp edges for values over 400 mg/dL and ~ 22 mmol/L. This is because of the relationships between the `RiskFactor` and `BGM` / `REF` values. I'll outline these two measurements below.
+When we re-create the graph using the risk pair data, we get see sharp
+edges for values over 400 mg/dL and \~ 22 mmol/L. This is because of the
+relationships between the `RiskFactor` and `BGM` / `REF` values. I’ll
+outline these two measurements below.
 
-## `RiskFactor` vs. `BGM`/`REF`
+## `RiskFactor` vs. `BGM`/`REF`
 
-If we look at `RiskFactor` as a function of `seg_val`, we see the following.
+If we look at `RiskFactor` as a function of `seg_val`, we see the
+following.
 
-```{r RiskFactor-REF-BGM}
+``` r
 RiskPairData %>% 
   tidyr::gather(key = "seg_key", 
                 value = "seg_val", 
@@ -285,13 +351,17 @@ RiskPairData %>%
     geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
 ```
 
-The values of `RiskFactor` do not change much for the `BGM` and `REF` values of 400-450, 450-500, and 500-600. 
+![](imagesRiskFactor-REF-BGM-1.png)<!-- -->
+
+The values of `RiskFactor` do not change much for the `BGM` and `REF`
+values of 400-450, 450-500, and 500-600.
 
 ## Plot `abs_risk` VS `REF`/`BGM`
 
-If we plot the absolute value of the `RiskFactor`, we see a similar pattern.
+If we plot the absolute value of the `RiskFactor`, we see a similar
+pattern.
 
-```{r RiskFactor-REF-BGM-2}
+``` r
 RiskPairData %>% 
   tidyr::gather(key = "seg_key", 
                 value = "seg_val", 
@@ -300,37 +370,39 @@ RiskPairData %>%
     geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
 ```
 
-The same lines are seen when the absolute value of `RiskFactor` is plotted against the `BGM` and `REF` values. This explains why the plot below looks the way it does. The sharp lines are a result of the minimal change in `RiskFactor` (or `abs_risk`) for `BGM` and `REF` values of 400-450, and 500-600.
+![](imagesRiskFactor-REF-BGM-2-1.png)<!-- -->
+
+The same lines are seen when the absolute value of `RiskFactor` is
+plotted against the `BGM` and `REF` values. This explains why the plot
+below looks the way it does. The sharp lines are a result of the minimal
+change in `RiskFactor` (or `abs_risk`) for `BGM` and `REF` values of
+400-450, and 500-600.
 
 ## The Gaussian smoothed image
 
 This is the image from the excel file.
 
-```{r download-seg600-file, echo=FALSE, results='hide'}
-download.file(url = paste0(github_root,"Image/seg600.png?raw=true"), 
-              destfile = "images/seg600.png")
-```
+![](images/seg600.png)<!-- -->
 
-```{r new-BackgroundComplete, echo=FALSE}
-knitr::include_graphics("images/seg600.png")
-```
+I can use this image in the plot as a background and layer the data
+points from the sample data on top.
 
-I can use this image in the plot as a background and layer the data points from the sample data on top. 
+## Upload the Gaussian image
 
-## Upload the Gaussian image 
+Load the image into RStudio and assign it to an object with
+`png::readPNG()`.
 
-Load the image into RStudio and assign it to an object with `png::readPNG()`.
-
-```{r BackgroundSmooth}
+``` r
 # read in as png
 BackgroundSmooth <- png::readPNG("images/seg600.png")
 ```
 
 ## Layer 1 (axes and color gradient)
 
-This is the new plot without any data added to the image. All I do here is create the x and y axes and set a four-point color gradient.
+This is the new plot without any data added to the image. All I do here
+is create the x and y axes and set a four-point color gradient.
 
-```{r gaussian-plot}
+``` r
 base_layer <- base_data %>% 
   ggplot(aes(
       x = x_coordinate,
@@ -358,11 +430,14 @@ scales_layer <- base_layer +
 scales_layer
 ```
 
+![](imagesgaussian-plot-1.png)<!-- -->
+
 ## Layer 2 (Gaussian image)
 
-This is the Gaussian image layer. Now that I have the axes set, I can set the `xmin`, `xmax`, `ymin`, and `ymax` values in my plot. 
+This is the Gaussian image layer. Now that I have the axes set, I can
+set the `xmin`, `xmax`, `ymin`, and `ymax` values in my plot.
 
-```{r gaussian_layer}
+``` r
 gaussian_layer <- scales_layer +
   ggplot2::annotation_custom(
     grid::rasterGrob(image = BackgroundSmooth, 
@@ -375,11 +450,14 @@ gaussian_layer <- scales_layer +
 gaussian_layer
 ```
 
+![](imagesgaussian_layer-1.png)<!-- -->
+
 ## Layer 3 (color gradient)
 
-In this layer I add the color gradient scaling and coloring, and also the custom labels for each level. 
+In this layer I add the color gradient scaling and coloring, and also
+the custom labels for each level.
 
-```{r gaussian_gradient_layer}
+``` r
 gaussian_gradient_layer <- gaussian_layer + 
     ggplot2::scale_fill_gradientn( # scale_*_gradientn creats a n-color gradient
     values = scales::rescale(c(
@@ -413,11 +491,13 @@ gaussian_gradient_layer <- gaussian_layer +
 gaussian_gradient_layer
 ```
 
+![](imagesgaussian_gradient_layer-1.png)<!-- -->
+
 ## Layer 4 (sample data)
 
-In the final layer, I add the sample data to the plot. 
+In the final layer, I add the sample data to the plot.
 
-```{r heatmap_plot, message=FALSE, warning=FALSE}
+``` r
 heatmap_plot <- gaussian_gradient_layer +
   geom_point(
     data = SampMeasData, # introduce sample data frame
@@ -433,5 +513,7 @@ heatmap_plot <- gaussian_gradient_layer +
   )
 heatmap_plot
 ```
+
+![](imagesheatmap_plot-1.png)<!-- -->
 
 Now I just need to add this to the application.
