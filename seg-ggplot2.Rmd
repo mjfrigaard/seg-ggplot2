@@ -27,7 +27,7 @@ if (!file.exists("data/")) {
 knitr::opts_chunk$set(echo = TRUE,
                       tidy = FALSE,
                       size = "small",
-                      fig.path = "images")
+                      fig.path = "images/")
 ```
 
 # Background

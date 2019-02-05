@@ -161,16 +161,16 @@ RiskPairData %>%
     ## # A tibble: 10 x 4
     ##      REF   BGM RiskFactor abs_risk
     ##    <dbl> <dbl>      <dbl>    <dbl>
-    ##  1    25   565     -3.70     3.70 
-    ##  2   119    10      2.09     2.09 
-    ##  3   327   435     -0.534    0.534
-    ##  4   192   160      0.517    0.517
-    ##  5   350   109      1.65     1.65 
-    ##  6   290   472     -0.880    0.880
-    ##  7    71   469     -3.15     3.15 
-    ##  8   228   332     -0.646    0.646
-    ##  9    71   541     -3.22     3.22 
-    ## 10   212   111      1.26     1.26
+    ##  1   516   588   -0.00254  0.00254
+    ##  2   145   584   -2.41     2.41   
+    ##  3   484   481    0        0      
+    ##  4   478   340    0.514    0.514  
+    ##  5   515   528    0        0      
+    ##  6     3   178   -3.00     3.00   
+    ##  7   476   116    1.98     1.98   
+    ##  8   567   231    1.08     1.08   
+    ##  9   431   236    0.931    0.931  
+    ## 10   557   318    0.618    0.618
 
 ## The `SampMeasData`
 
@@ -186,16 +186,16 @@ SampMeasData %>%
     ## # A tibble: 10 x 2
     ##      REF   BGM
     ##    <dbl> <dbl>
-    ##  1   172   190
-    ##  2   122   123
-    ##  3   136   141
-    ##  4   143   154
-    ##  5    66    69
-    ##  6   207   205
-    ##  7   206   221
-    ##  8   107   112
-    ##  9   161   155
-    ## 10   157   159
+    ##  1   120   134
+    ##  2   149   142
+    ##  3   131   132
+    ##  4    86    90
+    ##  5   162   152
+    ##  6   151   144
+    ##  7    96   106
+    ##  8   119   125
+    ##  9   111   106
+    ## 10   376   335
 
 ## The `VanBltComp`
 
@@ -211,16 +211,16 @@ VanBltComp %>%
     ## # A tibble: 10 x 2
     ##      REF   BGM
     ##    <dbl> <dbl>
-    ##  1   122   121
-    ##  2   194   187
-    ##  3   102    95
-    ##  4   147   156
-    ##  5   177   164
-    ##  6   228   221
-    ##  7   146   147
-    ##  8   220   228
-    ##  9   222   201
-    ## 10   195   191
+    ##  1   164   152
+    ##  2   118   125
+    ##  3   122   107
+    ##  4   135   157
+    ##  5   163   153
+    ##  6   162   148
+    ##  7   297   283
+    ##  8    78    89
+    ##  9   199   187
+    ## 10    71    68
 
 # Motivating problem/issue
 
@@ -330,7 +330,7 @@ heatmap_plot <- risk_level_color_gradient +
 heatmap_plot
 ```
 
-![](imagesheatmap-version-1-1.png)<!-- -->
+![](images/heatmap-version-1-1.png)<!-- -->
 
 When we re-create the graph using the risk pair data, we get see sharp
 edges for values over 400 mg/dL and \~ 22 mmol/L. This is because of the
@@ -351,7 +351,7 @@ RiskPairData %>%
     geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
 ```
 
-![](imagesRiskFactor-REF-BGM-1.png)<!-- -->
+![](images/RiskFactor-REF-BGM-1.png)<!-- -->
 
 The values of `RiskFactor` do not change much for the `BGM` and `REF`
 values of 400-450, 450-500, and 500-600.
@@ -370,7 +370,7 @@ RiskPairData %>%
     geom_point(aes(color = seg_key), alpha = 1/8, size = 0.5)
 ```
 
-![](imagesRiskFactor-REF-BGM-2-1.png)<!-- -->
+![](images/RiskFactor-REF-BGM-2-1.png)<!-- -->
 
 The same lines are seen when the absolute value of `RiskFactor` is
 plotted against the `BGM` and `REF` values. This explains why the plot
@@ -430,7 +430,7 @@ scales_layer <- base_layer +
 scales_layer
 ```
 
-![](imagesgaussian-plot-1.png)<!-- -->
+![](images/gaussian-plot-1.png)<!-- -->
 
 ## Layer 2 (Gaussian image)
 
@@ -450,7 +450,7 @@ gaussian_layer <- scales_layer +
 gaussian_layer
 ```
 
-![](imagesgaussian_layer-1.png)<!-- -->
+![](images/gaussian_layer-1.png)<!-- -->
 
 ## Layer 3 (color gradient)
 
@@ -491,7 +491,7 @@ gaussian_gradient_layer <- gaussian_layer +
 gaussian_gradient_layer
 ```
 
-![](imagesgaussian_gradient_layer-1.png)<!-- -->
+![](images/gaussian_gradient_layer-1.png)<!-- -->
 
 ## Layer 4 (sample data)
 
@@ -514,6 +514,6 @@ heatmap_plot <- gaussian_gradient_layer +
 heatmap_plot
 ```
 
-![](imagesheatmap_plot-1.png)<!-- -->
+![](images/heatmap_plot-1.png)<!-- -->
 
 Now I just need to add this to the application.
